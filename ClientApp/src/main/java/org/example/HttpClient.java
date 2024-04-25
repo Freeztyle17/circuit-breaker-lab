@@ -27,7 +27,7 @@ public class HttpClient {
                 System.out.println("|--------Request"+((i+1)>=10 ? (i+1)+"-------|" :  (i+1)+"--------|" ));
 
 
-            } catch (Exception e) {
+            } catch (IOException e) {
                 System.out.println(e);
             }
 
