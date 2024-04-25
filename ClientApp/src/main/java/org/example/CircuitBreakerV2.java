@@ -7,19 +7,20 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
 
-public class CircuitBreakerV2 {
+public class CircuitBreaker {
 
+    private final int failureThreshold;
     private final int retryTimeout;
-    private AtomicLong lastFailureTime;
+    private int failures;
     private boolean isOpen;
 
-    public CircuitBreakerV2(int retryTimeout) {
+    public CircuitBreaker(int failureThreshold, int retryTimeout) {
+        this.failureThreshold = failureThreshold;
         this.retryTimeout = retryTimeout;
-        this.lastFailureTime = new AtomicLong(0);
+        this.failures = 0;
         this.isOpen = false;
     }
 
@@ -30,6 +31,8 @@ public class CircuitBreakerV2 {
 
 
         try {
+
+
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 
@@ -44,11 +47,14 @@ public class CircuitBreakerV2 {
 
             in.close();
 
-        } catch (IOException e) {
-            open();
-            System.out.println("|=======>!!!! Server returned status "+connection.getResponseCode()+" !!!!<=======|");
-            throw Lombok.sneakyThrow(e);
 
+
+        } catch (IOException e) {
+            if(connection.getResponseCode() >= 500){
+                System.out.println("|=======>!!!! Server returned status "+connection.getResponseCode()+" !!!!<=======|");
+                failures++;
+                throw Lombok.sneakyThrow(e);
+            }
         }
 
         return connection;
@@ -56,29 +62,30 @@ public class CircuitBreakerV2 {
 
     }
 
-    public void checkState() throws Exception {
+    public void checkState(){
+
+        if(failures >= failureThreshold){
+            open();
+        }
 
         if(isOpen){
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastFailureTime.get() > retryTimeout) {
-                System.out.println("Time is over.");
+            try {
+                System.out.println("Circuit breaker is opened. Wait "+retryTimeout/1000+" seconds.");
+                Thread.sleep(retryTimeout);
                 close();
-            }else {
-                throw new Exception("Circuit breaker is open. Request denied.");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-
         }
     }
 
     public void close() {
+        failures = 0;
         isOpen = false;
-        lastFailureTime.set(0);
         System.out.println("Circuit breaker is closed.");
     }
 
     public void open() {
         isOpen = true;
-        lastFailureTime.set(System.currentTimeMillis());
-        System.out.println("Circuit breaker is opened.");
     }
 }
