@@ -31,6 +31,8 @@ public class CircuitBreaker {
 
 
         try {
+
+
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 
@@ -45,10 +47,14 @@ public class CircuitBreaker {
 
             in.close();
 
+
+
         } catch (IOException e) {
-            System.out.println("|=======>!!!! Server returned status "+connection.getResponseCode()+" !!!!<=======|");
-            failures++;
-            throw Lombok.sneakyThrow(e);
+            if(connection.getResponseCode() >= 500){
+                System.out.println("|=======>!!!! Server returned status "+connection.getResponseCode()+" !!!!<=======|");
+                failures++;
+                throw Lombok.sneakyThrow(e);
+            }
         }
 
         return connection;
