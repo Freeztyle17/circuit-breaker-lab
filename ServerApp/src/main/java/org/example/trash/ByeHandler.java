@@ -1,0 +1,25 @@
+package org.example.trash;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+
+import java.io.IOException;
+import java.io.OutputStream;
+
+public class ByeHandler implements HttpHandler {
+    String response = "Goodbye from the server!";
+
+
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+
+        exchange.sendResponseHeaders(200, response.getBytes().length);
+
+        OutputStream os = exchange.getResponseBody();
+
+        os.write(response.getBytes());
+        os.close();
+
+    }
+
+}
