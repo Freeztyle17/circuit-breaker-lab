@@ -48,14 +48,16 @@ public class CircuitBreakerV3 {
             in.close();
 
         } catch (IOException e) {
-            System.out.println("|=======>!!!! Server returned status "+connection.getResponseCode()+" !!!!<=======|");
+            if(connection.getResponseCode() >= 500) {
+                System.out.println("|=======>!!!! Server returned status " + connection.getResponseCode() + " !!!!<=======|");
 
-            failures++;
-            if(failures >= failureThreshold){
-                open();
+                failures++;
+                if (failures >= failureThreshold) {
+                    open();
+                }
+
+                throw Lombok.sneakyThrow(e);
             }
-
-            throw Lombok.sneakyThrow(e);
         }
 
         return connection;
